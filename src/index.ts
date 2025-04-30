@@ -5,7 +5,7 @@ interface Env {
 const CORS_HEADERS: Record<string, string> = {
 	'Access-Control-Allow-Origin': '*',
 	'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-	'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+	'Access-Control-Allow-Headers': '*',
 };
 
 class CTFileAPI {
@@ -79,7 +79,6 @@ async function main(request: Request, env: Env): Promise<Response> {
 			  const xtlink  = params.get('xtlink')
 			  const file_id = params.get('file_id')
 			  const token   = params.get('token')
-			  const download = params.get('download') === 'true'
 			  if (!xtlink || !file_id) {
 				return new Response('Missing required parameters', { status: 400 })
 			  }
@@ -97,8 +96,9 @@ async function main(request: Request, env: Env): Promise<Response> {
 			  // 第三步：向上游发起 fetch，带上 UA + 透传头
 			  const upstreamResp = await fetch(upstreamUrl, {
 				headers: {
-				  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
 								'(KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36',
+				'Connection': 'keep-alive',
 				  ...(clientRange   ? { 'Range': clientRange }   : {}),
 				  ...(clientIfRange ? { 'If-Range': clientIfRange } : {}),
 				},
