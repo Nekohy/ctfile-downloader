@@ -14,7 +14,6 @@ class CTFileAPI {
 	constructor(private token: string) {
 		this.headers = {
 			'User-Agent': 'okhttp/4.9.2',
-			Accept: 'application/json',
 			'Content-Type': 'application/json',
 		};
 	}
