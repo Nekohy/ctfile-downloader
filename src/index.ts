@@ -11,7 +11,7 @@ const CORS_HEADERS: Record<string, string> = {
 class CTFileAPI {
 	private headers: HeadersInit;
 
-	constructor(private token: string) {
+	constructor() {
 		this.headers = {
 			'User-Agent': 'okhttp/4.9.2',
 			'Content-Type': 'application/json',
@@ -32,13 +32,11 @@ class CTFileAPI {
 		return response.json();
 	}
 
-	async list(xtlink: string|null, tokenOverride?: string|null) {
-		const token = tokenOverride || this.token;
+	async list(xtlink: string|null, token?: string|null) {
 		return this.post('/p2/browser/file/list', { xtlink, token, reload: false });
 	}
 
-	async download(xtlink: string|null, file_id: string|null, tokenOverride?: string|null) {
-		const token = tokenOverride || this.token;
+	async download(xtlink: string|null, file_id: string|null, token?: string|null) {
 		return this.post('/p2/browser/file/fetch_url', { xtlink, file_id, token });
 	}
 }
@@ -47,17 +45,30 @@ async function main(request: Request, env: Env): Promise<Response> {
 	if (request.method !== 'GET') {
 		return new Response('Method Not Allowed', { status: 405 });
 	}
-
-	// 随机选取一个 token
-	const tokens = env.TOKENS
-		? env.TOKENS.split(',').map(t => t.trim()).filter(Boolean)
-		: [];
-	const selectedToken = tokens[Math.floor(Math.random() * tokens.length)];
-	const api = new CTFileAPI(selectedToken);
+	
+	const api = new CTFileAPI();
 
 	try {
 		const url = new URL(request.url);
 		const params = url.searchParams
+		// 获取 URL 参数中的 token
+		const paramToken = params.get('token');
+
+		// 将环境变量中的 TOKENS 拆分为数组（如果存在）
+		const tokensList = env.TOKENS
+			? env.TOKENS.split(',').map(t => t.trim()).filter(Boolean)
+			: [];
+
+		// 优先使用 URL 参数传来的 token，否则随机从 TOKENS 中选一个
+		const token: string | null = paramToken
+		?? (tokensList.length > 0
+			? tokensList[Math.floor(Math.random() * tokensList.length)]
+			: null);
+
+		// 如果最终还是没有 token，就返回 400
+		if (!token) {
+			return new Response('No Token Found', { status: 400 });
+		}
 		switch (url.pathname) {
 			case '/meow':
 			  return new Response('Meow', { status: 200 })
@@ -78,7 +89,6 @@ async function main(request: Request, env: Env): Promise<Response> {
 			case '/download': {
 			  const xtlink  = params.get('xtlink')
 			  const file_id = params.get('file_id')
-			  const token   = params.get('token')
 			  if (!xtlink || !file_id) {
 				return new Response('Missing required parameters', { status: 400 })
 			  }
