@@ -16,7 +16,8 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"send_metrics": false,
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -34,7 +35,7 @@
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	// "vars": { "MY_VARIABLE": "production_value" },
+	"vars": { "TOKENS": "1,2,3,4,5,6,7,8,9,10" },
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
