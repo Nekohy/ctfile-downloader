@@ -41,6 +41,10 @@ class CTFileAPI {
 	}
 }
 
+function processXtlink(xtlink: string) {
+	return xtlink.startsWith("ctfile://") ? xtlink : "ctfile://" + xtlink
+}
+
 async function main(request: Request, env: Env): Promise<Response> {
 	if (request.method !== 'GET') {
 		return new Response('Method Not Allowed', { status: 405 });
@@ -56,7 +60,7 @@ async function main(request: Request, env: Env): Promise<Response> {
 		if (path === '/meow') {
 		  return new Response('Meow!', { status: 200 })
 		}
-		
+
 		if (env.PASSWORD && env.PASSWORD !== params.get('token')) {
 			return new Response('Wrong Password', { status: 403 });
 		}
@@ -67,10 +71,11 @@ async function main(request: Request, env: Env): Promise<Response> {
 
 		switch (path) {
 			case '/origin/list': {
-			  const xtlink = params.get('xtlink')
+			  var xtlink = params.get('xtlink')
 			  if (!xtlink) {
 				return new Response('Missing "xtlink" parameter', { status: 400 })
 			  }
+			  xtlink = processXtlink(xtlink)
 			  const listResult = await api.list(xtlink, token)
 			  return new Response(JSON.stringify(listResult), {
 				status: 200,
@@ -79,11 +84,12 @@ async function main(request: Request, env: Env): Promise<Response> {
 			}
 		
 			case '/download': {
-				const xtlink  = params.get('xtlink');
+				var xtlink  = params.get('xtlink');
 				const file_id = params.get('file_id');
 				if (!xtlink || !file_id) {
 				  return new Response('Missing required parameters', { status: 400 });
 				}
+				xtlink = processXtlink(xtlink)
 				// 调用后端 API 拿到真正的下载地址
 				const downloadResult = await api.download(xtlink, file_id, token);
 				const upstreamUrl = downloadResult.download_url;
@@ -103,9 +109,7 @@ async function main(request: Request, env: Env): Promise<Response> {
 			  if (!xtlink) {
 				return new Response('Missing "xtlink" parameter', { status: 400 })
 			  }
-			  if (!xtlink.startsWith("ctfile://")) {
-				xtlink = "ctfile://" + xtlink
-			  }
+			  xtlink = processXtlink(xtlink)
 		
 			  let filesToDownload
 			  if (file_id.length > 0) {
