@@ -51,18 +51,12 @@ async function main(request: Request, env: Env): Promise<Response> {
 	try {
 		const url = new URL(request.url);
 		const params = url.searchParams
-
-		// 获取 URL 参数中的 token
-		const token = params.get('token');
-		// 如果最终还是没有 token，就返回 400
-		if (!token) {
-			return new Response('No Token Found', { status: 400 });
-		}
 		const path = url.pathname
 
 		if (path === '/meow') {
 		  return new Response('Meow!', { status: 200 })
 		}
+		
 		if (env.PASSWORD && env.PASSWORD !== params.get('token')) {
 			return new Response('Wrong Password', { status: 403 });
 		}
