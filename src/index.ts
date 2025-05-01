@@ -62,13 +62,15 @@ async function main(request: Request, env: Env): Promise<Response> {
 		if (env.PASSWORD && env.PASSWORD !== params.get('token')) {
 			return new Response('Wrong Password', { status: 403 });
 		}
+
+		const paramsToken = params.get('token');
 		let token;
 		if (paramsToken) {
 		  // 优先使用 URL 参数里的 token
 		  token = paramsToken;
-		} else if (Array.isArray(TOKEN) && TOKEN.length > 0) {
-		  const idx = Math.floor(Math.random() * TOKEN.length);
-		  token = TOKEN[idx];
+		} else if (Array.isArray(TOKENS) && TOKENS.length > 0) {
+		  const idx = Math.floor(Math.random() * TOKENS.length);
+		  token = TOKENS[idx];
 		} else {
 		  return new Response('No Token Found', { status: 400 });
 		}
