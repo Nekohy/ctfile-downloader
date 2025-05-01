@@ -51,31 +51,29 @@ async function main(request: Request, env: Env): Promise<Response> {
 	try {
 		const url = new URL(request.url);
 		const params = url.searchParams
+
 		// 获取 URL 参数中的 token
-		const paramToken = params.get('token');
-
-		// 将环境变量中的 TOKENS 拆分为数组（如果存在）
-		const tokensList = env.TOKENS
-			? env.TOKENS.split(',').map(t => t.trim()).filter(Boolean)
-			: [];
-
-		// 优先使用 URL 参数传来的 token，否则随机从 TOKENS 中选一个
-		const token: string | null = paramToken
-		?? (tokensList.length > 0
-			? tokensList[Math.floor(Math.random() * tokensList.length)]
-			: null);
-
+		const token = params.get('token');
 		// 如果最终还是没有 token，就返回 400
 		if (!token) {
 			return new Response('No Token Found', { status: 400 });
 		}
-		switch (url.pathname) {
-			case '/meow':
-			  return new Response('Meow', { status: 200 })
-		
+		const path = url.pathname
+
+		if (path === '/meow') {
+		  return new Response('Meow!', { status: 200 })
+		}
+		if (env.PASSWORD && env.PASSWORD !== params.get('token')) {
+			return new Response('Wrong Password', { status: 403 });
+		}
+		const token = params.get('token');
+		if (!token) {
+			return new Response('No Token Found', { status: 400 });
+		}
+
+		switch (path) {
 			case '/origin/list': {
 			  const xtlink = params.get('xtlink')
-			  const token  = params.get('token')
 			  if (!xtlink) {
 				return new Response('Missing "xtlink" parameter', { status: 400 })
 			  }
@@ -87,52 +85,24 @@ async function main(request: Request, env: Env): Promise<Response> {
 			}
 		
 			case '/download': {
-			  const xtlink  = params.get('xtlink')
-			  const file_id = params.get('file_id')
-			  if (!xtlink || !file_id) {
-				return new Response('Missing required parameters', { status: 400 })
-			  }
-			  const downloadResult = await api.download(xtlink, file_id, token)
-			  const upstreamUrl = downloadResult.download_url
-			  if (!upstreamUrl) {
-				return new Response('No download_url returned', { status: 502 })
-			  }
-			
-			  // 第二步：从客户端请求里拷贝断点续传相关头
-			  const clientRange    = request.headers.get('range')
-			  const clientIfRange  = request.headers.get('if-range')
-			  console.log(clientRange, clientIfRange)
-			
-			  // 第三步：向上游发起 fetch，带上 UA + 透传头
-			  const upstreamResp = await fetch(upstreamUrl, {
-				headers: {
-				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-								'(KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36',
-				'Connection': 'keep-alive',
-				  ...(clientRange   ? { 'Range': clientRange }   : {}),
-				  ...(clientIfRange ? { 'If-Range': clientIfRange } : {}),
-				},
-			  })
-			
-			  // 第四步：把上游的状态码和支持分片下载的头原样返回给客户端
-			  const responseHeaders = new Headers(upstreamResp.headers)
-			  // 只保留对客户端有用的那几项，避免不必要的 hop-by-hop 或安全头
-			  const allowed = ['Content-Type','Content-Length','Content-Range','Accept-Ranges','ETag','Last-Modified']
-			  const filtered = new Headers()
-			  for (let name of allowed) {
-				if (responseHeaders.has(name)) {
-				  filtered.set(name, responseHeaders.get(name))
+				const xtlink  = params.get('xtlink');
+				const file_id = params.get('file_id');
+				if (!xtlink || !file_id) {
+				  return new Response('Missing required parameters', { status: 400 });
 				}
-			  }
-			  return new Response(upstreamResp.body, {
-				status: upstreamResp.status,
-				headers: filtered
-			  })
+				// 调用后端 API 拿到真正的下载地址
+				const downloadResult = await api.download(xtlink, file_id, token);
+				const upstreamUrl = downloadResult.download_url;
+				if (!upstreamUrl) {
+				  return new Response('No download_url returned', { status: 502 });
+				}
+			  
+				// 直接 302 重定向到上游 URL
+				return Response.redirect(upstreamUrl, 302);
 			}
 		
 			case '/download_info': {
 			  var xtlink   = params.get('xtlink')
-			  const token    = params.get('token')
 			  const download = params.get('download') === 'true'
 			  const file_id = params.getAll('file_id')  // ?file_id=1&file_id=2
 		
