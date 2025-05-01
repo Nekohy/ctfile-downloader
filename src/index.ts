@@ -1,6 +1,4 @@
-interface Env {
-	TOKENS: string;
-}
+import { TOKENS } from "./token";
 
 const CORS_HEADERS: Record<string, string> = {
 	'Access-Control-Allow-Origin': '*',
@@ -64,9 +62,15 @@ async function main(request: Request, env: Env): Promise<Response> {
 		if (env.PASSWORD && env.PASSWORD !== params.get('token')) {
 			return new Response('Wrong Password', { status: 403 });
 		}
-		const token = params.get('token');
-		if (!token) {
-			return new Response('No Token Found', { status: 400 });
+		let token;
+		if (paramsToken) {
+		  // 优先使用 URL 参数里的 token
+		  token = paramsToken;
+		} else if (Array.isArray(TOKEN) && TOKEN.length > 0) {
+		  const idx = Math.floor(Math.random() * TOKEN.length);
+		  token = TOKEN[idx];
+		} else {
+		  return new Response('No Token Found', { status: 400 });
 		}
 
 		switch (path) {
