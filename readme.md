@@ -8,7 +8,10 @@
 
 # DEMO
 面板 <https://v0--alpha-coral.vercel.app>
+
 API <https://ctfile-downloader.huayue2.workers.dev>
+
+测试图片 ![截图](./image.png)
 
 # 接口列表（精简版）
 
