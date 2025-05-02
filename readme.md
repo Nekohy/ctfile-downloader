@@ -7,7 +7,8 @@
 如果帮到了你，能否给我一个star呢？
 
 # DEMO
-<https://v0--alpha-coral.vercel.app>
+面板 <https://v0--alpha-coral.vercel.app>
+API <https://ctfile-downloader.huayue2.workers.dev>
 
 # 接口列表（精简版）
 
@@ -25,6 +26,8 @@
 
 # 前端面板
 - 仓库地址：<https://github.com/Nekohy/ctfile-downloader-panel> （由v0.dev自动生成）
+
+(使用时配置NEXT_PUBLIC_API_URL为你自己的API地址)
 
 # 免责声明
 本项目仅供学习交流使用，无任何盈利/售卖行为，请勿用于非法用途，否则后果自负
