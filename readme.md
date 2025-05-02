@@ -7,9 +7,9 @@
 如果帮到了你，能否给我一个star呢？
 
 # DEMO
-面板 <https://v0--alpha-coral.vercel.app>
+面板 <https://umpsa.top>
 
-API <https://ctfile-downloader.huayue2.workers.dev>
+API <https://api.umpsa.top>
 
 测试图片 ![截图](./images/1.png)
 
