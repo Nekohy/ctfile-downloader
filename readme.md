@@ -11,7 +11,7 @@
 
 API <https://ctfile-downloader.huayue2.workers.dev>
 
-测试图片 ![截图](./image.png)
+测试图片 ![截图](./images/1.png)
 
 # 接口列表（精简版）
 
