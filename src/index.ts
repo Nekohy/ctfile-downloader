@@ -59,7 +59,11 @@ async function main(request: Request, env: Env): Promise<Response> {
 		  return new Response('Meow!', { status: 200 })
 		}
 
-		if (env.PASSWORD && env.PASSWORD !== params.get('token')) {
+		if (path === '/hasPassword') {
+			return new Response(env.PASSWORD ? 'true' : 'false', { status: 200 });
+		}
+
+		if (env.PASSWORD && env.PASSWORD !== params.get('password')) {
 			return new Response('Wrong Password', { status: 403 });
 		}
 
