@@ -59,13 +59,26 @@ async function main(request: Request, env: Env): Promise<Response> {
 		  return new Response('Meow!', { status: 200 })
 		}
 
-		if (path === '/hasPassword') {
-			return new Response(env.PASSWORD ? 'true' : 'false', { status: 200 });
+		const password = params.get('password');
+
+		// 登录路由：检查密码是否正确
+		if (path === '/login') {
+			if (!env.PASSWORD) {
+				return new Response('true', { status: 200 });
+			}
+			if (password === env.PASSWORD) {
+				return new Response('true', { status: 200 });
+				} else {
+				return new Response('false', { status: 200 });
+			}
+		}
+		
+		if (env.PASSWORD) {
+			if (password !== env.PASSWORD) {
+				return new Response('Wrong Password', { status: 403 });
+			}
 		}
 
-		if (env.PASSWORD && env.PASSWORD !== params.get('password')) {
-			return new Response('Wrong Password', { status: 403 });
-		}
 
 		const paramsToken = params.get('token');
 		let token;
