@@ -25,7 +25,7 @@ API <https://api.umpsa.top>
 # 配置
 （可选，但建议）环境变量配置 env.PASSWORD,没有则不做鉴权
 
-修改 token.ts 中的 TOKENS 变量，填入你的 TOKEN（cookie中的ct_uid），每个TOKEN为一个线程（以快速使用）
+修改 token.ts 中的 TOKENS 变量，填入你的 TOKEN（暂不提供获取方式），每个TOKEN为一个线程（以快速使用）
 
 # 前端面板
 - 仓库地址：<https://github.com/Nekohy/ctfile-downloader-panel> （由v0.dev自动生成）
