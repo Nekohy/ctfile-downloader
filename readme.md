@@ -19,7 +19,6 @@ API <https://api.umpsa.top>
 | --------------- | ---- | ------------------------------------- | -------------------------------------- |
 | `/meow`         | GET  | 无                                    | `Meow`                  |
 | `/login`         | GET  | `password?（鉴权密码）`                          | 验证密码是否正确，返回 `true` 或 `false`（env.PASSWORD 为空时始终为 true） |
-| `/get_token`         | GET  | `email（登录邮箱）`, `accpassword（账号密码）`, `password?`                             | 获取登录token，返回 `{ code,token }`                 |
 | `/download_info` | GET  | `xtlink`, `token?（登录token，非必须）`, `password?`       | 获取文件列表，返回 `[ { key, name } ]` |
 | `/download`     | GET  | `xtlink`, `token?`, `password?`, `file_id` | 下载文件，`file_id` 来自 `/download_info` 返回的 key 的值 |
 
