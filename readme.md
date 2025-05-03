@@ -18,14 +18,24 @@ API <https://api.umpsa.top>
 | 接口            | 方法 | 参数                                  | 描述                                   |
 | --------------- | ---- | ------------------------------------- | -------------------------------------- |
 | `/meow`         | GET  | 无                                    | `Meow`                  |
-| `/login`         | GET  | `password?`                          | 验证密码是否正确，返回 `true` 或 `false`（env.PASSWORD 为空时始终为 true） |
-| `/download_info` | GET  | `xtlink`, `token?`, `password?`       | 获取文件列表，返回 `[ { key, name } ]` |
+| `/login`         | GET  | `password?（鉴权密码）`                          | 验证密码是否正确，返回 `true` 或 `false`（env.PASSWORD 为空时始终为 true） |
+| `/get_token`         | GET  | `email（登录邮箱）`, `accpassword（账号密码）`, `password?`                             | 获取登录token，返回 `{ code,token }`                 |
+| `/download_info` | GET  | `xtlink`, `token?（登录token，非必须）`, `password?`       | 获取文件列表，返回 `[ { key, name } ]` |
 | `/download`     | GET  | `xtlink`, `token?`, `password?`, `file_id` | 下载文件，`file_id` 来自 `/download_info` 返回的 key 的值 |
 
 # 配置
 （可选，但建议）环境变量配置 env.PASSWORD,没有则不做鉴权
 
-修改 token.ts 中的 TOKENS 变量，填入你的 TOKEN（暂不提供获取方式），每个TOKEN为一个线程（以快速使用）
+修改 token.ts 中的 TOKENS 变量，填入你的 TOKEN（通过下文curl获取），每个TOKEN为一个线程（以快速使用）
+
+```curl
+curl -X POST 'https://rest.ctfile.com/p2/user/auth/login' -H 'User-Agent: okhttp/4.9.2' -H 'Content-Type: application/json' -d '{
+  "token": null,
+  "username": "邮箱",
+  "password": "密码",
+  "app_version": "3.7.6"
+}' -k
+```
 
 # 前端面板
 - 仓库地址：<https://github.com/Nekohy/ctfile-downloader-panel> （由v0.dev自动生成）
