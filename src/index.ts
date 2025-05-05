@@ -1,4 +1,4 @@
-import { TOKENS } from "./token";
+import { TOKENS } from './token';
 
 const CORS_HEADERS: Record<string, string> = {
 	'Access-Control-Allow-Origin': '*',
@@ -30,33 +30,49 @@ class CTFileAPI {
 		return response.json();
 	}
 
-	async list(xtlink: string|null, token?: string|null) {
-		return this.post('/p2/browser/file/list', { xtlink, token, reload: false });
+	async list(xtlink: string, token?: string, folder_id?: string, basePath?: string): Promise<Array<{ key: string; name: string}>> {
+		const reqResult = await this.post('/p2/browser/file/list', { xtlink, token, folder_id, reload: false });
+		console.log(reqResult);
+		const items = reqResult.results;
+		const allFiles = [];
+		for (const item of items) {
+			const currentName = basePath ? `${basePath}/${item.name}` : item.name;
+			if (item.icon === 'folder') {
+				const subFiles = await this.list(xtlink, token, item.key, currentName);
+				allFiles.push(...subFiles);
+			} else {
+				allFiles.push({
+					key: item.key,
+					name: currentName,
+				});
+			}
+		}
+		return allFiles;
 	}
 
-	async download(xtlink: string|null, file_id: string|null, token?: string|null) {
+	async download(xtlink: string, file_id: string, token?: string): Promise<{code:number, download_url:string}> {
 		return this.post('/p2/browser/file/fetch_url', { xtlink, file_id, token });
 	}
 }
 
 function processXtlink(xtlink: string) {
-	return xtlink.startsWith("ctfile://") ? xtlink : "ctfile://" + xtlink
+	return xtlink.startsWith('ctfile://') ? xtlink : 'ctfile://' + xtlink;
 }
 
 async function main(request: Request, env: Env): Promise<Response> {
 	if (request.method !== 'GET') {
 		return new Response('Method Not Allowed', { status: 405 });
 	}
-	
+
 	const api = new CTFileAPI();
 
 	try {
 		const url = new URL(request.url);
-		const params = url.searchParams
-		const path = url.pathname
+		const params = url.searchParams;
+		const path = url.pathname;
 
 		if (path === '/meow') {
-		  return new Response('Meow!', { status: 200 })
+			return new Response('Meow!', { status: 200 });
 		}
 
 		const password = params.get('password');
@@ -68,101 +84,87 @@ async function main(request: Request, env: Env): Promise<Response> {
 			}
 			if (password === env.PASSWORD) {
 				return new Response('true', { status: 200 });
-				} else {
+			} else {
 				return new Response('false', { status: 200 });
 			}
 		}
-		
+
 		if (env.PASSWORD) {
 			if (password !== env.PASSWORD) {
 				return new Response('Wrong Password', { status: 403 });
 			}
 		}
 
-
 		const paramsToken = params.get('token');
 		let token;
 		if (paramsToken) {
-		  // 优先使用 URL 参数里的 token
-		  token = paramsToken;
+			// 优先使用 URL 参数里的 token
+			token = paramsToken;
 		} else if (Array.isArray(TOKENS) && TOKENS.length > 0) {
-		  const idx = Math.floor(Math.random() * TOKENS.length);
-		  token = TOKENS[idx];
+			const idx = Math.floor(Math.random() * TOKENS.length);
+			token = TOKENS[idx];
 		} else {
-		  return new Response('No Token Found', { status: 400 });
+			return new Response('No Token Found', { status: 400 });
 		}
 
 		switch (path) {
-			case '/origin/list': {
-			  var xtlink = params.get('xtlink')
-			  if (!xtlink) {
-				return new Response('Missing "xtlink" parameter', { status: 400 })
-			  }
-			  xtlink = processXtlink(xtlink)
-			  const listResult = await api.list(xtlink, token)
-			  return new Response(JSON.stringify(listResult), {
-				status: 200,
-				headers: { 'Content-Type': 'application/json' },
-			  })
-			}
-		
 			case '/download': {
-				var xtlink  = params.get('xtlink');
+				var xtlink = params.get('xtlink');
 				const file_id = params.get('file_id');
 				if (!xtlink || !file_id) {
-				  return new Response('Missing required parameters', { status: 400 });
+					return new Response('Missing required parameters', { status: 400 });
 				}
-				xtlink = processXtlink(xtlink)
+				xtlink = processXtlink(xtlink);
 				// 调用后端 API 拿到真正的下载地址
 				const downloadResult = await api.download(xtlink, file_id, token);
 				const upstreamUrl = downloadResult.download_url;
 				if (!upstreamUrl) {
-				  return new Response('No download_url returned', { status: 502 });
+					return new Response('No download_url returned', { status: 502 });
 				}
-			  
+
 				// 直接 302 重定向到上游 URL
 				return Response.redirect(upstreamUrl, 302);
 			}
-		
+
 			case '/download_info': {
-			  var xtlink   = params.get('xtlink')
-			  const download = params.get('download') === 'true'
-			  const file_id = params.getAll('file_id')  // ?file_id=1&file_id=2
-		
-			  if (!xtlink) {
-				return new Response('Missing "xtlink" parameter', { status: 400 })
-			  }
-			  xtlink = processXtlink(xtlink)
-		
-			  let filesToDownload
-			  if (file_id.length > 0) {
-				filesToDownload = file_id.map(key => ({ key }))
-			  } else {
-				const listResult = await api.list(xtlink, token)
-				filesToDownload = listResult.results.map((f: { key: string|undefined; name: string|undefined; }) => ({ key: f.key, name: f.name }))
-			  }
-		
-			  const results = await Promise.all(
-				filesToDownload.map(async (file: { key: string | null; }) => {
-				  if (!download) {
-					return file
-				  } else {
-					const dl = await api.download(xtlink, file.key, token)
-					return { ...file, downloadUrl: dl.download_url }
-				  }
-				})
-			  )
-		
-			  return new Response(JSON.stringify(results), {
-				status: 200,
-				headers: { 'Content-Type': 'application/json' },
-			  })
+				var xtlink = params.get('xtlink');
+				const download = params.get('download') === 'true';
+				const file_id = params.getAll('file_id'); // ?file_id=1&file_id=2
+
+				if (!xtlink) {
+					return new Response('Missing "xtlink" parameter', { status: 400 });
+				}
+				xtlink = processXtlink(xtlink);
+
+				let filesToDownload;
+				if (file_id.length > 0) {
+					filesToDownload = file_id.map((key) => ({ key }));
+				} else {
+					const listResult = await api.list(xtlink, token);
+					filesToDownload = listResult.map((f: { key: string | undefined; name: string | undefined }) => ({ key: f.key, name: f.name }));
+				}
+
+				const results = await Promise.all(
+					filesToDownload.map(async file => {
+					  if (!download) {
+						return file;
+					  } else {
+						const dl = await api.download(xtlink!, file.key!, token);
+						return { ...file, downloadUrl: dl.download_url };
+					  }
+					})
+				  );
+				  
+
+				return new Response(JSON.stringify(results), {
+					status: 200,
+					headers: { 'Content-Type': 'application/json' },
+				});
 			}
 
-		
 			default:
-			  return new Response('Not Found', { status: 404 })
-		  }
+				return new Response('Not Found', { status: 404 });
+		}
 	} catch (error: any) {
 		return new Response(`Internal Server Error: ${error.message}`, { status: 500 });
 	}
